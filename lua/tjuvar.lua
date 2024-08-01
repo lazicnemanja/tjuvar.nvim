@@ -59,7 +59,7 @@ function M.setup(opts)
           pattern = '*',
           callback = save_session,
         })
-      end, 100)  -- Delay in milliseconds
+      end, 800) 
     end,
   })
 end
