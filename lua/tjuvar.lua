@@ -3,7 +3,7 @@ local M = {}
 M.config = {
   session_name = '.session.nvim',
   auto_load = false,
-  events = {'BufWritePost', 'BufEnter', 'WinEnter', 'CmdlineLeave'},
+  save_events = {'BufWritePost', 'BufEnter', 'WinEnter', 'CmdlineLeave'},
 }
 
 function M.setup(opts)
@@ -49,15 +49,17 @@ function M.setup(opts)
     end
   end
 
-  vim.api.nvim_create_autocmd(M.config.events, {
-    pattern = '*',
-    callback = save_session,
-  })
-
   vim.api.nvim_create_autocmd('VimEnter', {
     pattern = '*',
     callback = function()
       vim.schedule(prompt_load_session)
+
+      vim.defer_fn(function()
+        vim.api.nvim_create_autocmd(M.config.save_events, {
+          pattern = '*',
+          callback = save_session,
+        })
+      end, 100)  -- Delay in milliseconds
     end,
   })
 end
