@@ -16,5 +16,5 @@ A simple session management plugin for Neovim.
   end,
 }
 ```
-##License
+## License
 MIT
