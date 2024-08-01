@@ -3,10 +3,12 @@ local M = {}
 M.config = {
   session_name = '.session.nvim',
   auto_load = false,
-  events = {'BufWritePost', 'BufEnter', 'WinEnter', 'CmdlineLeave'},
+  save_events = {'BufWritePost', 'BufEnter', 'WinEnter', 'CmdlineLeave'},
 }
 
 local session_loaded = false
+local vim_entered = false
+local session_file_exists_at_start = false
 
 function M.setup(opts)
   M.config = vim.tbl_deep_extend('force', M.config, opts or {})
@@ -26,21 +28,24 @@ function M.setup(opts)
   local project_root = get_project_root()
   local session_file = project_root .. '/' .. M.config.session_name
 
+  -- Check if session file exists when Neovim starts
+  session_file_exists_at_start = vim.fn.filereadable(session_file) == 1
+
   local function save_session()
-    if vim.fn.expand('%:p'):find(project_root, 1, true) then
+    if vim_entered and session_loaded and vim.fn.expand('%:p'):find(project_root, 1, true) then
       vim.cmd('mksession! ' .. session_file)
     end
   end
 
   local function load_session()
-    if vim.fn.filereadable(session_file) == 1 then
+    if session_file_exists_at_start then
       vim.cmd('source ' .. session_file)
       session_loaded = true
     end
   end
 
   local function prompt_load_session()
-    if vim.fn.filereadable(session_file) == 1 then
+    if session_file_exists_at_start then
       if M.config.auto_load then
         load_session()
       else
@@ -52,10 +57,11 @@ function M.setup(opts)
     end
   end
 
-  vim.api.nvim_create_autocmd(M.config.events, {
+  -- Save session on configurable events, only if VimEnter has happened
+  vim.api.nvim_create_autocmd(M.config.save_events, {
     pattern = '*',
     callback = function()
-      if session_loaded then
+      if vim_entered then
         save_session()
       end
     end,
@@ -64,6 +70,7 @@ function M.setup(opts)
   vim.api.nvim_create_autocmd('VimEnter', {
     pattern = '*',
     callback = function()
+      vim_entered = true
       vim.schedule(prompt_load_session)
     end,
   })
