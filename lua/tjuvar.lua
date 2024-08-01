@@ -3,6 +3,7 @@ local M = {}
 M.config = {
   session_name = '.session.nvim',
   auto_load = false,
+  events = {'BufWritePost', 'BufEnter', 'WinEnter', 'CmdlineLeave'},
 }
 
 function M.setup(opts)
@@ -48,7 +49,7 @@ function M.setup(opts)
     end
   end
 
-  vim.api.nvim_create_autocmd('BufWritePost', {
+  vim.api.nvim_create_autocmd(M.config.events, {
     pattern = '*',
     callback = save_session,
   })
