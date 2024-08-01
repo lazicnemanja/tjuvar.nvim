@@ -3,8 +3,10 @@ local M = {}
 M.config = {
   session_name = '.session.nvim',
   auto_load = false,
-  save_events = {'BufWritePost', 'BufEnter', 'WinEnter', 'CmdlineLeave'},
+  events = {'BufWritePost', 'BufEnter', 'WinEnter', 'CmdlineLeave'},
 }
+
+local session_loaded = false
 
 function M.setup(opts)
   M.config = vim.tbl_deep_extend('force', M.config, opts or {})
@@ -33,6 +35,7 @@ function M.setup(opts)
   local function load_session()
     if vim.fn.filereadable(session_file) == 1 then
       vim.cmd('source ' .. session_file)
+      session_loaded = true
     end
   end
 
@@ -49,17 +52,19 @@ function M.setup(opts)
     end
   end
 
+  vim.api.nvim_create_autocmd(M.config.events, {
+    pattern = '*',
+    callback = function()
+      if session_loaded then
+        save_session()
+      end
+    end,
+  })
+
   vim.api.nvim_create_autocmd('VimEnter', {
     pattern = '*',
     callback = function()
       vim.schedule(prompt_load_session)
-
-      vim.defer_fn(function()
-        vim.api.nvim_create_autocmd(M.config.save_events, {
-          pattern = '*',
-          callback = save_session,
-        })
-      end, 800) 
     end,
   })
 end
